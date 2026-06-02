@@ -11,12 +11,29 @@ app.use(express.json());
 app.use(express.static(path.join(__dirname, '../docs')));
 
 const fallbackModels = [
-  'llama2',
-  'mistral',
-  'wizardLM',
-  'guanaco',
+  'roar-pro',
   'llama3',
+  'codellama',
+  'mistral',
+  'llama2',
 ];
+
+const roarSystemPrompt = `You are ROAR (Roblox Optimized Assistant & Resource), an expert AI assistant specializing in Roblox Luau game development. You have deep knowledge of:
+
+- Roblox Studio interface, tools, and workflows
+- Luau scripting syntax, best practices, and idioms
+- Game architecture patterns (DataStoreService, RemoteEvents, Physics, Pathfinding)
+- Performance optimization for Roblox (Instance pooling, LOD, streaming)
+- Security best practices (client/server validation, exploit mitigation)
+- Common frameworks and design patterns ( MVC, service modules, remotes)
+
+When providing code:
+- Use proper Luau syntax with type annotations where helpful
+- Include comments explaining key sections
+- Follow Roblox best practices (e.g., use WaitForChild, validate client input)
+- Format code blocks clearly with syntax highlighting
+
+Be concise but thorough. Prioritize safe, performant, and maintainable solutions.`;
 
 async function fetchOllama(pathSuffix, body) {
   const url = `${ollamaHost}${pathSuffix}`;
@@ -57,7 +74,7 @@ app.post('/api/chat', async (req, res) => {
     const payload = {
       model,
       messages: [
-        { role: 'system', content: 'You are a specialized Roblox AI assistant. Answer clearly and keep code snippets concise.' },
+        { role: 'system', content: roarSystemPrompt },
         { role: 'user', content: prompt },
       ],
       max_tokens: 600,
@@ -91,7 +108,7 @@ app.post('/api/roblox', async (req, res) => {
     const payload = {
       model,
       messages: [
-        { role: 'system', content: 'You are a Roblox Studio AI assistant. Provide concise, actionable advice.' },
+        { role: 'system', content: roarSystemPrompt },
         { role: 'user', content: input },
       ],
       max_tokens: 600,
@@ -108,6 +125,6 @@ app.post('/api/roblox', async (req, res) => {
 });
 
 app.listen(port, () => {
-  console.log(`RoarAI bridge running at http://127.0.0.1:${port}`);
+  console.log(`ROAR AI bridge running at http://127.0.0.1:${port}`);
   console.log(`Using Ollama host: ${ollamaHost}`);
 });

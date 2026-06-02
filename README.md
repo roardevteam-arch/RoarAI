@@ -1,11 +1,14 @@
-# RoarAI
+# ROAR AI
 
-RoarAI is a web-based AI console built for Roblox Studio. It includes:
+**Roblox Optimized Assistant & Resource**
+
+ROAR AI is a web-based AI console built for Roblox Studio. It includes:
 
 - A **static web UI** compatible with **GitHub Pages**
 - A **local Node.js bridge** to connect the web interface with **Ollama**
 - A **Roblox Studio plugin** to open the console and send selected content
 - A **model chooser** powered by Ollama local models
+- **ROAR PRO** - A specialized AI model optimized for Roblox Luau development
 
 ## Features
 
@@ -13,6 +16,17 @@ RoarAI is a web-based AI console built for Roblox Studio. It includes:
 - Send Roblox Studio selection data into AI prompts
 - Deploy the UI to GitHub Pages with the `docs/` folder
 - Local bridge handles the Ollama API calls safely on your machine
+- Specialized ROAR PRO model for Roblox development guidance
+
+## ROAR PRO Model
+
+ROAR AI includes a specialized system prompt optimized for Roblox development:
+
+- Luau scripting syntax and best practices
+- Game architecture patterns (DataStoreService, RemoteEvents, Physics, Pathfinding)
+- Performance optimization for Roblox (Instance pooling, LOD, streaming)
+- Security best practices (client/server validation, exploit mitigation)
+- Common frameworks and design patterns (MVC, service modules, remotes)
 
 ## Setup
 
