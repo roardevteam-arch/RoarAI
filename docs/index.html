@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>RoarAI Roblox AI Console</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <div class="page-shell">
+    <header class="hero">
+      <div>
+        <h1>RoarAI</h1>
+        <p>Roblox Studio AI console with Ollama model selection.</p>
+      </div>
+      <div class="status-pill" id="status-pill">Connecting...</div>
+    </header>
+
+    <main>
+      <section class="card settings-card">
+        <h2>Model selector</h2>
+        <div class="field-row">
+          <label for="model-select">Choose an Ollama model</label>
+          <select id="model-select"></select>
+        </div>
+        <div class="field-row">
+          <button id="refresh-models" class="primary">Refresh models</button>
+          <button id="clear-chat">Clear chat</button>
+        </div>
+      </section>
+
+      <section class="card chat-card">
+        <h2>AI conversation</h2>
+        <div id="chat-log" class="chat-log"></div>
+        <textarea id="prompt-input" placeholder="Ask the AI about Roblox, code, or game ideas..."></textarea>
+        <button id="send-button" class="primary full-width">Send to AI</button>
+      </section>
+
+      <section class="card info-card">
+        <h2>Quick start</h2>
+        <ul>
+          <li>Run the local bridge server in <code>server/</code>.</li>
+          <li>Open the plugin in Roblox Studio and enable HTTP requests.</li>
+          <li>Use the local web UI or your GitHub Pages URL.</li>
+        </ul>
+        <p class="muted">This UI is GitHub Pages compatible when deployed from the repository <code>docs/</code> folder.</p>
+      </section>
+    </main>
+  </div>
+  <script src="app.js"></script>
+</body>
+</html>
