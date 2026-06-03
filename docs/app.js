@@ -12,6 +12,8 @@ const promptInput = document.getElementById('prompt-input');
 const typingIndicator = document.getElementById('typing-indicator');
 const sidebar = document.getElementById('sidebar');
 const sidebarToggle = document.getElementById('sidebar-toggle');
+const newChatBtn = document.getElementById('new-chat-btn');
+const topbarMenu = document.getElementById('topbar-menu');
 const pluginModal = document.getElementById('plugin-modal');
 const welcomeScreen = document.getElementById('welcome-screen');
 const setupModal = document.getElementById('setup-modal');
@@ -23,6 +25,13 @@ const settingsBtn = document.getElementById('settings-btn');
 const settingsCloseBtn = document.getElementById('settings-close-btn');
 const settingsSaveBtn = document.getElementById('settings-save-btn');
 const clearSettingsBtn = document.getElementById('settings-clear-btn');
+const settingsServerUrlInput = document.getElementById('settings-server-url');
+const tempSlider = document.getElementById('temp-slider');
+const tokensSlider = document.getElementById('tokens-slider');
+const tempValue = document.getElementById('temp-value');
+const tokensValue = document.getElementById('tokens-value');
+const charCount = document.getElementById('char-count');
+const ollamaSelectWrap = document.getElementById('ollama-select-wrap');
 const offlineBanner = document.getElementById('offline-banner');
 const configureButton = document.getElementById('configure-btn');
 const pluginLink = document.getElementById('plugin-link');
@@ -222,13 +231,23 @@ function normalizeUrl(value) {
 function loadStoredSettings() {
   currentServerUrl = normalizeUrl(storage.getItem(serverUrlKey) || defaultServerUrl);
   if (serverUrlInput) serverUrlInput.value = currentServerUrl;
+  if (settingsServerUrlInput) settingsServerUrlInput.value = currentServerUrl;
   if (modelSelect) modelSelect.value = storage.getItem(modelKey) || 'roar-pro';
+
+  const savedTemp = parseFloat(storage.getItem(temperatureKey) || '0.7');
+  const savedTokens = parseInt(storage.getItem(tokensKey) || '800', 10) || 800;
+  if (tempSlider) tempSlider.value = String(Math.round(savedTemp * 100));
+  if (tokensSlider) tokensSlider.value = String(savedTokens);
+  if (tempValue) tempValue.textContent = String(savedTemp.toFixed(1));
+  if (tokensValue) tokensValue.textContent = String(savedTokens);
 }
 
 function saveSettings(serverUrl) {
   const normalizedUrl = normalizeUrl(serverUrl || defaultServerUrl);
   storage.setItem(serverUrlKey, normalizedUrl);
   currentServerUrl = normalizedUrl;
+  if (serverUrlInput) serverUrlInput.value = normalizedUrl;
+  if (settingsServerUrlInput) settingsServerUrlInput.value = normalizedUrl;
 }
 
 function clearStoredSettings() {
@@ -239,7 +258,12 @@ function clearStoredSettings() {
   storage.removeItem(seenSetupKey);
   currentServerUrl = defaultServerUrl;
   if (serverUrlInput) serverUrlInput.value = defaultServerUrl;
+  if (settingsServerUrlInput) settingsServerUrlInput.value = defaultServerUrl;
   if (modelSelect) modelSelect.value = 'roar-pro';
+  if (tempSlider) tempSlider.value = '70';
+  if (tokensSlider) tokensSlider.value = '800';
+  if (tempValue) tempValue.textContent = '0.7';
+  if (tokensValue) tokensValue.textContent = '800';
 }
 
 function updateStatus(text, variant = 'normal') {
@@ -273,6 +297,7 @@ function closeSetupModal() {
 }
 
 function openSettingsPanel() {
+  if (settingsServerUrlInput) settingsServerUrlInput.value = currentServerUrl;
   settingsPanel?.classList.remove('hidden');
 }
 
@@ -292,7 +317,7 @@ function appendMessage(role, text) {
   if (!chatLog) return;
   const bubble = document.createElement('div');
   bubble.className = `chat-bubble ${role}`;
-  const roleIcon = role === 'user' ? '??' : '??';
+  const roleIcon = role === 'user' ? '👤' : '🤖';
   const roleLabel = role === 'user' ? 'You' : 'ROAR';
   bubble.innerHTML = `
     <div class="bubble-header"><span class="role-icon">${roleIcon}</span><span class="role-label">${roleLabel}</span></div>
@@ -301,6 +326,22 @@ function appendMessage(role, text) {
   chatLog.appendChild(bubble);
   chatLog.scrollTop = chatLog.scrollHeight;
   hideWelcomeScreen();
+}
+
+function updateModelCardState() {
+  const roarCard = document.querySelector('.model-card[data-model="roar"]');
+  const customCard = document.querySelector('.model-card[data-model="custom"]');
+  if (!modelSelect || !roarCard || !customCard) return;
+
+  if (modelSelect.value === 'roar-pro') {
+    roarCard.classList.add('selected');
+    customCard.classList.remove('selected');
+    ollamaSelectWrap?.classList.add('hidden');
+  } else {
+    roarCard.classList.remove('selected');
+    customCard.classList.add('selected');
+    ollamaSelectWrap?.classList.remove('hidden');
+  }
 }
 
 function formatCode(text) {
@@ -457,6 +498,26 @@ function clearSettingsHandler() {
   fetchModels();
 }
 
+function updateSliderDisplay() {
+  if (tempSlider && tempValue) {
+    const value = parseFloat(tempSlider.value) / 100;
+    tempValue.textContent = value.toFixed(1);
+    storage.setItem(temperatureKey, String(value));
+  }
+
+  if (tokensSlider && tokensValue) {
+    const value = parseInt(tokensSlider.value, 10) || 800;
+    tokensValue.textContent = String(value);
+    storage.setItem(tokensKey, String(value));
+  }
+}
+
+function updateCharCount() {
+  if (charCount && promptInput) {
+    charCount.textContent = `${promptInput.value.length} chars`;
+  }
+}
+
 function showSetupModalIfNeeded() {
   const hasSeenSetup = storage.getItem(seenSetupKey);
   if (!hasSeenSetup) {
@@ -478,7 +539,14 @@ promptInput?.addEventListener('keydown', (event) => {
     sendPrompt();
   }
 });
+promptInput?.addEventListener('input', updateCharCount);
 sidebarToggle?.addEventListener('click', toggleSidebar);
+newChatBtn?.addEventListener('click', () => {
+  if (chatLog) chatLog.innerHTML = '';
+  showWelcomeScreen();
+  updateStatus(serverAvailable ? 'Ready' : 'Demo mode', 'warning');
+});
+topbarMenu?.addEventListener('click', toggleSidebar);
 setupSaveButton?.addEventListener('click', saveSetupHandler);
 setupCloseButton?.addEventListener('click', closeSetupModal);
 settingsBtn?.addEventListener('click', openSettingsPanel);
@@ -490,17 +558,37 @@ pluginLink?.addEventListener('click', (event) => {
   event.preventDefault();
   pluginModal?.classList.remove('hidden');
 });
-document.querySelectorAll('.modal-overlay').forEach((overlay) => {
+modelSelect?.addEventListener('change', updateModelCardState);
+[...document.querySelectorAll('.model-card')].forEach((card) => {
+  card.addEventListener('click', () => {
+    const targetModel = card.dataset.model;
+    if (!targetModel || !modelSelect) return;
+
+    if (targetModel === 'custom') {
+      ollamaSelectWrap?.classList.remove('hidden');
+      if (modelSelect.value === 'roar-pro') {
+        modelSelect.value = fallbackModels[1]?.id || 'llama3';
+      }
+    } else {
+      modelSelect.value = 'roar-pro';
+      ollamaSelectWrap?.classList.add('hidden');
+    }
+    updateModelCardState();
+  });
+});
+tempSlider?.addEventListener('input', updateSliderDisplay);
+tokensSlider?.addEventListener('input', updateSliderDisplay);
+[...document.querySelectorAll('.modal-overlay')].forEach((overlay) => {
   overlay.addEventListener('click', (event) => {
     if (event.target === overlay) {
       overlay.classList.add('hidden');
     }
   });
 });
-document.querySelectorAll('.quick-prompt').forEach((button) => {
+[...document.querySelectorAll('.quick-prompt')].forEach((button) => {
   button.addEventListener('click', handleQuickPrompt);
 });
-document.querySelectorAll('.modal-close').forEach((button) => {
+[...document.querySelectorAll('.modal-close')].forEach((button) => {
   button.addEventListener('click', () => {
     const parent = button.closest('.modal-overlay');
     if (parent) parent.classList.add('hidden');
@@ -509,8 +597,11 @@ document.querySelectorAll('.modal-close').forEach((button) => {
 
 async function initApp() {
   loadStoredSettings();
+  updateModelCardState();
+  updateCharCount();
   await checkConnection();
   await fetchModels();
+  updateModelCardState();
   if (!serverAvailable) {
     showSetupModalIfNeeded();
   }
