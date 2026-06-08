@@ -234,29 +234,6 @@
     </main>
   </div>
 
-  <!-- Plugin Modal -->
-  <div class="modal-overlay hidden" id="plugin-modal">
-    <div class="modal">
-      <div class="modal-header">
-        <h3>Plugin Setup</h3>
-        <button class="modal-close" id="plugin-close-btn">
-          <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
-            <path d="M4 4l10 10M14 4L4 14" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
-          </svg>
-        </button>
-      </div>
-      <div class="modal-body">
-        <p>The RoarAI plugin connects Roblox Studio to your local Ollama bridge through the companion bridge server.</p>
-        <ol>
-          <li>Start Ollama locally on your PC.</li>
-          <li>Run the local bridge with <code>npm start</code> in the <code>server</code> folder.</li>
-          <li>Open the plugin in Roblox Studio and enter the same bridge URL.</li>
-        </ol>
-        <p class="modal-note">No external OpenAI API key is required. RoarAI uses only local Ollama models.</p>
-      </div>
-    </div>
-  </div>
-
   <!-- Settings Panel -->
   <div class="modal-overlay hidden" id="settings-panel">
     <div class="modal">
@@ -286,7 +263,7 @@
     <div class="modal">
       <div class="modal-header">
         <h3>Roblox Studio Plugin</h3>
-        <button class="modal-close" id="modal-close">
+        <button class="modal-close" id="plugin-close-btn">
           <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
             <path d="M4 4l10 10M14 4L4 14" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
           </svg>

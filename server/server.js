@@ -74,22 +74,19 @@ async function fetchOllama(pathSuffix, body = null, method = 'POST') {
   const options = {
     method,
     headers: { 'Content-Type': 'application/json' },
-    timeout: requestTimeout,
+    signal: AbortSignal.timeout(requestTimeout),
   };
   if (body !== null) {
     options.body = JSON.stringify(body);
   }
 
   try {
-    const response = await Promise.race([
-      fetchFn(url, options),
-      new Promise((_, reject) => 
-        setTimeout(() => reject(new Error('Fetch timeout')), requestTimeout)
-      )
-    ]);
+    const response = await fetchFn(url, options);
 
-    if (!response.ok && response.status !== 200) {
-      logger.warn(`Ollama returned ${response.status} for ${pathSuffix}`);
+    if (!response.ok) {
+      const errorText = await response.text().catch(() => 'Unknown error');
+      logger.warn(`Ollama returned ${response.status} for ${pathSuffix}: ${errorText}`);
+      throw new Error(`Ollama returned status ${response.status}`);
     }
 
     const payload = await response.text();
@@ -99,7 +96,15 @@ async function fetchOllama(pathSuffix, body = null, method = 'POST') {
       return payload;
     }
   } catch (error) {
-    logger.error(`Fetch error: ${error.message}`);
+    if (error.name === 'TimeoutError' || error.code === 'ABORT_ERR') {
+      logger.error(`Ollama request timed out for ${pathSuffix}`);
+      throw new Error('Ollama request timed out');
+    }
+    if (error.cause?.code === 'ECONNREFUSED' || error.message?.includes('ECONNREFUSED')) {
+      logger.error(`Ollama connection refused at ${ollamaHost}`);
+      throw new Error('Ollama is not running. Start it with: ollama serve');
+    }
+    logger.error(`Fetch error for ${pathSuffix}: ${error.message}`);
     throw error;
   }
 }
@@ -198,6 +203,10 @@ app.post('/api/chat', async (req, res) => {
     return res.status(400).json({ error: 'Missing model or prompt.' });
   }
 
+  if (typeof prompt !== 'string') {
+    return res.status(400).json({ error: 'Prompt must be a string.' });
+  }
+
   if (prompt.length > 10000) {
     return res.status(400).json({ error: 'Prompt too long (max 10000 chars).' });
   }
@@ -236,6 +245,7 @@ app.post('/api/chat', async (req, res) => {
     res.status(503).json({
       error: 'Unable to reach Ollama. Ensure Ollama is running and OLLAMA_HOST is set correctly.',
       hint: `Expected Ollama at: ${ollamaHost}`,
+      details: error.message,
     });
   }
 });
@@ -261,10 +271,10 @@ app.post('/api/roblox', async (req, res) => {
     };
 
     const result = await fetchOllama('/v1/chat/completions', payload);
-    const response = result?.choices?.[0]?.message?.content || 
-                   result?.choices?.[0]?.text || 
+    const response = result?.choices?.[0]?.message?.content ||
+                   result?.choices?.[0]?.text ||
                    (result?.output ? String(result.output) : 'No answer from Ollama.');
-    
+
     logger.debug(`Roblox API response: ${response.length} chars`);
     res.json({ response });
   } catch (error) {
@@ -310,4 +320,3 @@ process.on('SIGINT', () => {
 });
 
 module.exports = app;
-
